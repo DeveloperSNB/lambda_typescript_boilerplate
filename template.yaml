@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  DLQToMainFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      CodeUri: .
+      Environment:
+        Variables:
+          DLQ_URL: !Ref DLQUrl
+          MAIN_QUEUE_URL: !Ref MainQueueUrl
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt MainQueue.QueueName
+        - SQSReceiveMessagePolicy:
+            QueueName: !GetAtt DLQ.QueueName
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+
+Parameters:
+  DLQUrl:
+    Type: String
+    Description: The URL of the Dead Letter Queue
+  MainQueueUrl:
+    Type: String
+    Description: The URL of the Main Queue
